@@ -1,0 +1,35 @@
+services:
+  # 1. Django Web Service (HTTP + WebSockets via Daphne)
+  - type: web
+    name: nexus-chat-app
+    env: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "daphne -b 0.0.0.0 -p $PORT chat_app.asgi:application"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexus-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: nexus-redis
+          type: keyvalue
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  # 2. Redis Service for Channels Layer
+  - type: keyvalue
+    name: nexus-redis
+    plan: free
+    ipAllowList: [] # Only allow internal Render services to connect
+
+# 3. PostgreSQL Database Service
+databases:
+  - name: nexus-db
+    plan: free
